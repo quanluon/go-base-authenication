@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"net/http"
+	"project-sqlc/internal/dto"
 	"project-sqlc/internal/services"
 	"project-sqlc/utils"
 )
@@ -17,7 +18,7 @@ func NewAuthController(jwtService services.IJwtService, authService services.IAu
 }
 
 func (c *AuthController) Register(w http.ResponseWriter, r *http.Request) {
-	var request services.RegisterRequest
+	var request dto.RegisterRequest
 	json.NewDecoder(r.Body).Decode(&request)
 	user, err := c.authService.Register(r.Context(), request)
 	if err != nil {
@@ -28,7 +29,7 @@ func (c *AuthController) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
-	var request services.LoginRequest
+	var request dto.LoginRequest
 	json.NewDecoder(r.Body).Decode(&request)
 	loginResponse, err := c.authService.Login(r.Context(), request)
 	if err != nil {
@@ -39,7 +40,7 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *AuthController) RefreshToken(w http.ResponseWriter, r *http.Request) {
-	var request services.RefreshTokenRequest
+	var request dto.RefreshTokenRequest
 	json.NewDecoder(r.Body).Decode(&request)
 	loginResponse, err := c.authService.RefreshToken(r.Context(), request)
 	if err != nil {
