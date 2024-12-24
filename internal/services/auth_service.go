@@ -4,36 +4,14 @@ import (
 	"context"
 	"errors"
 	db "project-sqlc/internal/db/models"
+	"project-sqlc/internal/dto"
 	"project-sqlc/utils"
 )
 
-type RegisterRequest struct {
-	Name     string `json:"name" validate:"required"`
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required"`
-}
-
-type LoginRequest struct {
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required"`
-}
-
-type RefreshTokenRequest struct {
-	RefreshToken string `json:"refresh_token" validate:"required"`
-}
-
-type LoginResponse struct {
-	User         UserResponse
-	AccessToken  string
-	RefreshToken string
-	ExpIn        int64
-	RefreshExpIn int64
-}
-
 type IAuthService interface {
-	Register(ctx context.Context, request RegisterRequest) (UserResponse, error)
-	Login(ctx context.Context, request LoginRequest) (LoginResponse, error)
-	RefreshToken(ctx context.Context, request RefreshTokenRequest) (LoginResponse, error)
+	Register(ctx context.Context, request dto.RegisterRequest) (dto.UserResponse, error)
+	Login(ctx context.Context, request dto.LoginRequest) (dto.LoginResponse, error)
+	RefreshToken(ctx context.Context, request dto.RefreshTokenRequest) (dto.LoginResponse, error)
 }
 
 type AuthService struct {
@@ -45,11 +23,11 @@ func NewAuthService(userService IUserService, jwtService IJwtService) IAuthServi
 	return &AuthService{userService: userService, jwtService: jwtService}
 }
 
-func (s *AuthService) Register(ctx context.Context, request RegisterRequest) (UserResponse, error) {
+func (s *AuthService) Register(ctx context.Context, request dto.RegisterRequest) (dto.UserResponse, error) {
 	hashedPassword, _ := utils.HashPassword(request.Password)
 	existedUser, _ := s.userService.GetUserByEmail(ctx, request.Email)
 	if existedUser.Id != 0 {
-		return UserResponse{}, errors.New("email already exists")
+		return dto.UserResponse{}, errors.New("email already exists")
 	}
 
 	user, err := s.userService.CreateUser(ctx, db.User{
@@ -58,20 +36,20 @@ func (s *AuthService) Register(ctx context.Context, request RegisterRequest) (Us
 		Password: hashedPassword,
 	})
 	if err != nil {
-		return UserResponse{}, err
+		return dto.UserResponse{}, err
 	}
-	return UserResponse{
+	return dto.UserResponse{
 		Id:    user.Id,
 		Name:  user.Name,
 		Email: user.Email,
 	}, nil
 }
 
-func (s *AuthService) generateLoginResponse(user UserResponse) LoginResponse {
+func (s *AuthService) generateLoginResponse(user dto.UserResponse) dto.LoginResponse {
 	accessToken, diff, _ := s.jwtService.GenerateAccessToken(user)
 	refreshToken, refreshExp, _ := s.jwtService.GenerateRefreshToken(user)
 	user.Password = ""
-	return LoginResponse{
+	return dto.LoginResponse{
 		User:         user,
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
@@ -80,23 +58,23 @@ func (s *AuthService) generateLoginResponse(user UserResponse) LoginResponse {
 	}
 }
 
-func (s *AuthService) Login(ctx context.Context, request LoginRequest) (LoginResponse, error) {
+func (s *AuthService) Login(ctx context.Context, request dto.LoginRequest) (dto.LoginResponse, error) {
 	user, _ := s.userService.GetUserByEmail(ctx, request.Email)
 	if user.Id == 0 {
-		return LoginResponse{}, errors.New("user not found")
+		return dto.LoginResponse{}, errors.New("user not found")
 	}
 	isPasswordValid := utils.ComparePassword(request.Password, user.Password)
 	if !isPasswordValid {
-		return LoginResponse{}, errors.New("invalid password")
+		return dto.LoginResponse{}, errors.New("invalid password")
 	}
 	loginResponse := s.generateLoginResponse(user)
 	return loginResponse, nil
 }
 
-func (s *AuthService) RefreshToken(ctx context.Context, request RefreshTokenRequest) (LoginResponse, error) {
+func (s *AuthService) RefreshToken(ctx context.Context, request dto.RefreshTokenRequest) (dto.LoginResponse, error) {
 	user, err := s.jwtService.VerifyUserFromRefreshToken(request.RefreshToken)
 	if err != nil {
-		return LoginResponse{}, err
+		return dto.LoginResponse{}, err
 	}
 	loginResponse := s.generateLoginResponse(user)
 	return loginResponse, nil

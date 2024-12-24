@@ -3,6 +3,7 @@ package middlewares
 import (
 	"context"
 	"net/http"
+	"project-sqlc/internal/dto"
 	"project-sqlc/internal/services"
 	"project-sqlc/utils"
 	"strings"
@@ -32,7 +33,7 @@ func AuthMiddleware(jwtService services.IJwtService) func(next http.Handler) htt
 	}
 }
 
-func GetCurrentUser(r *http.Request) *services.UserResponse {
+func GetCurrentUser(r *http.Request) *dto.UserResponse {
 	currentUser := r.Context().Value(UserContextKey)
-	return currentUser.(*services.UserResponse)
+	return currentUser.(*dto.UserResponse)
 }
