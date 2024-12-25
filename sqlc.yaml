@@ -1,22 +1,9 @@
-# version: 2
-# sql:
-#   - engine: mysql
-#     schema: internal/db/migrations
-#     queries: internal/db/queries
-#     path: internal/db/models
-#     gen:
-#       go:
-#         package: database
-#         out: internal/db/database
-
-version: 1
-packages:
-  - name: "db" # The name of the Go package where the generated code will reside
-    path: "internal/db/models" # The directory where the generated code will be placed
-    queries: "./internal/db/queries/" # Path to the directory containing your SQL query files
-    schema: "./internal/db/migrations/" # Path to the directory containing your database schema
-    engine: "mysql" # Specify the database engine (e.g., postgresql, mysql)
-    emit_json_tags: true # Emit JSON tags for struct fields
-    emit_prepared_queries: true # Emit prepared queries
-    emit_interface: false # Emit an interface for the generated code
-    overrides: []
+version: 2
+sql:
+  - engine: postgresql
+    schema: internal/db/migrations
+    queries: internal/db/queries
+    gen:
+      go:
+        package: database
+        out: internal/db/models

@@ -14,7 +14,7 @@ type contextKey string
 
 const UserContextKey contextKey = "user"
 
-func AuthMiddleware(jwtService services.IJwtService) func(next http.Handler) http.Handler {
+func AuthMiddleware(authService services.IAuthService) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			bearerToken := r.Header.Get("Authorization")
@@ -23,12 +23,12 @@ func AuthMiddleware(jwtService services.IJwtService) func(next http.Handler) htt
 				utils.JsonResponseError(w, utils.UnauthorizedError(constants.UnauthorizedErrorCode, nil, constants.UnauthorizedErrorMessage))
 				return
 			}
-			user, verifyUserErr := jwtService.VerifyUserFromAccessToken(token)
+			user, verifyUserErr := authService.VerifyAccessToken(r.Context(), token)
 			if verifyUserErr != nil {
 				utils.JsonResponseError(w, verifyUserErr)
 				return
 			}
-			ctx := context.WithValue(r.Context(), UserContextKey, user)
+			ctx := context.WithValue(r.Context(), UserContextKey, &user)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

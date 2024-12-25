@@ -17,4 +17,5 @@ const (
 	UserLoginSuccessMessage         = "Login successful"
 	UserRefreshTokenSuccessMessage  = "Refresh token successful"
 	Success                         = "Success"
+	DoNotHavePermissionErrorMessage = "Do not have permission"
 )
