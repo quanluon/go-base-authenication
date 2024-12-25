@@ -13,10 +13,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: log env variables
-        run: |
-          echo $SECRET_KEY
-          echo $REFRESH_SECRET_KEY
-
-      - name: run
-        run: make run
+      - name: run tests
+        run: make test
