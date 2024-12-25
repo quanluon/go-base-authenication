@@ -3,21 +3,23 @@ package services
 import (
 	"errors"
 	"os"
+	"project-sqlc/internal/constants"
 	"project-sqlc/internal/dto"
+	"project-sqlc/utils"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
 type IJwtService interface {
-	VerifyAccessToken(tokenString string) (bool, error)
-	VerifyRefreshToken(tokenString string) (bool, error)
-	GetUserFromAccessToken(tokenString string) (dto.UserResponse, error)
-	GetUserFromRefreshToken(tokenString string) (dto.UserResponse, error)
-	GenerateAccessToken(user dto.UserResponse) (string, int64, error)
-	GenerateRefreshToken(user dto.UserResponse) (string, int64, error)
-	VerifyUserFromAccessToken(tokenString string) (dto.UserResponse, error)
-	VerifyUserFromRefreshToken(tokenString string) (dto.UserResponse, error)
+	VerifyAccessToken(tokenString string) (bool, *utils.APIError)
+	VerifyRefreshToken(tokenString string) (bool, *utils.APIError)
+	GetUserFromAccessToken(tokenString string) (dto.UserResponse, *utils.APIError)
+	GetUserFromRefreshToken(tokenString string) (dto.UserResponse, *utils.APIError)
+	GenerateAccessToken(user dto.UserResponse) (string, int64, *utils.APIError)
+	GenerateRefreshToken(user dto.UserResponse) (string, int64, *utils.APIError)
+	VerifyUserFromAccessToken(tokenString string) (dto.UserResponse, *utils.APIError)
+	VerifyUserFromRefreshToken(tokenString string) (dto.UserResponse, *utils.APIError)
 }
 
 type jwtService struct {
@@ -36,7 +38,7 @@ func NewJwtService() IJwtService {
 	}
 }
 
-func (j *jwtService) generateToken(user dto.UserResponse, duration time.Duration, secret string) (string, int64, error) {
+func (j *jwtService) generateToken(user dto.UserResponse, duration time.Duration, secret string) (string, int64, *utils.APIError) {
 	exp := time.Now().Add(duration).Unix()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":    user.Id,
@@ -47,43 +49,43 @@ func (j *jwtService) generateToken(user dto.UserResponse, duration time.Duration
 	diff := exp - time.Now().Unix()
 	tokenString, err := token.SignedString([]byte(secret))
 	if err != nil {
-		return "", 0, err
+		return "", 0, utils.InternalServerError(err.Error(), err)
 	}
 	return tokenString, diff, nil
 }
 
-func (j *jwtService) GenerateAccessToken(user dto.UserResponse) (string, int64, error) {
+func (j *jwtService) GenerateAccessToken(user dto.UserResponse) (string, int64, *utils.APIError) {
 	return j.generateToken(user, j.accessTokenDuration, j.secretKey)
 }
 
-func (j *jwtService) GenerateRefreshToken(user dto.UserResponse) (string, int64, error) {
+func (j *jwtService) GenerateRefreshToken(user dto.UserResponse) (string, int64, *utils.APIError) {
 	return j.generateToken(user, j.refreshTokenDuration, j.refreshSecretKey)
 }
 
-func (j *jwtService) verifyToken(tokenString string, secret string) (bool, error) {
+func (j *jwtService) verifyToken(tokenString string, secret string) (bool, *utils.APIError) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte(secret), nil
 	})
 	if err != nil {
-		return false, err
+		return false, utils.InternalServerError(err.Error(), err)
 	}
 	return token.Valid, nil
 }
 
-func (j *jwtService) VerifyAccessToken(tokenString string) (bool, error) {
+func (j *jwtService) VerifyAccessToken(tokenString string) (bool, *utils.APIError) {
 	return j.verifyToken(tokenString, j.secretKey)
 }
 
-func (j *jwtService) VerifyRefreshToken(tokenString string) (bool, error) {
+func (j *jwtService) VerifyRefreshToken(tokenString string) (bool, *utils.APIError) {
 	return j.verifyToken(tokenString, j.refreshSecretKey)
 }
 
-func (j *jwtService) getUserFromToken(tokenString string, secret string) (dto.UserResponse, error) {
+func (j *jwtService) getUserFromToken(tokenString string, secret string) (dto.UserResponse, *utils.APIError) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte(secret), nil
 	})
 	if err != nil {
-		return dto.UserResponse{}, err
+		return dto.UserResponse{}, utils.InternalServerError(err.Error(), err)
 	}
 	tokenData := token.Claims.(jwt.MapClaims)
 	return dto.UserResponse{
@@ -93,21 +95,21 @@ func (j *jwtService) getUserFromToken(tokenString string, secret string) (dto.Us
 	}, nil
 }
 
-func (j *jwtService) GetUserFromAccessToken(tokenString string) (dto.UserResponse, error) {
+func (j *jwtService) GetUserFromAccessToken(tokenString string) (dto.UserResponse, *utils.APIError) {
 	return j.getUserFromToken(tokenString, j.secretKey)
 }
 
-func (j *jwtService) GetUserFromRefreshToken(tokenString string) (dto.UserResponse, error) {
+func (j *jwtService) GetUserFromRefreshToken(tokenString string) (dto.UserResponse, *utils.APIError) {
 	return j.getUserFromToken(tokenString, j.refreshSecretKey)
 }
 
-func (j *jwtService) VerifyUserFromAccessToken(tokenString string) (dto.UserResponse, error) {
+func (j *jwtService) VerifyUserFromAccessToken(tokenString string) (dto.UserResponse, *utils.APIError) {
 	valid, err := j.VerifyAccessToken(tokenString)
 	if err != nil {
 		return dto.UserResponse{}, err
 	}
 	if !valid {
-		return dto.UserResponse{}, errors.New("invalid token")
+		return dto.UserResponse{}, utils.UnauthorizedError(constants.InvalidAccessTokenErrorMessage, errors.New(constants.InvalidTokenErrorCode))
 	}
 	userFromToken, err := j.GetUserFromAccessToken(tokenString)
 	if err != nil {
@@ -116,13 +118,13 @@ func (j *jwtService) VerifyUserFromAccessToken(tokenString string) (dto.UserResp
 	return userFromToken, nil
 }
 
-func (j *jwtService) VerifyUserFromRefreshToken(tokenString string) (dto.UserResponse, error) {
+func (j *jwtService) VerifyUserFromRefreshToken(tokenString string) (dto.UserResponse, *utils.APIError) {
 	valid, err := j.VerifyRefreshToken(tokenString)
 	if err != nil {
 		return dto.UserResponse{}, err
 	}
 	if !valid {
-		return dto.UserResponse{}, errors.New("invalid token")
+		return dto.UserResponse{}, utils.UnauthorizedError(constants.InvalidRefreshTokenErrorMessage, errors.New(constants.InvalidTokenErrorCode))
 	}
 	userFromToken, err := j.GetUserFromAccessToken(tokenString)
 	if err != nil {

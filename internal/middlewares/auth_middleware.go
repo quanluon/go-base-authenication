@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"project-sqlc/internal/dto"
 	"project-sqlc/internal/services"
@@ -19,12 +20,13 @@ func AuthMiddleware(jwtService services.IJwtService) func(next http.Handler) htt
 			bearerToken := r.Header.Get("Authorization")
 			token := strings.TrimPrefix(bearerToken, "Bearer ")
 			if token == "" {
-				utils.JsonResponseFailed(w, utils.BuildResponseFailed("Unauthorized", "Unauthorized", nil, http.StatusUnauthorized))
+				utils.JsonResponseError(w, utils.UnauthorizedError("Unauthorized", nil))
 				return
 			}
-			user, err := jwtService.VerifyUserFromAccessToken(token)
-			if err != nil {
-				utils.JsonResponseFailed(w, utils.BuildResponseFailed(err.Error(), err.Error(), nil, http.StatusUnauthorized))
+			user, verifyUserErr := jwtService.VerifyUserFromAccessToken(token)
+			fmt.Println("verifyUserErr", verifyUserErr)
+			if verifyUserErr != nil {
+				utils.JsonResponseError(w, verifyUserErr)
 				return
 			}
 			ctx := context.WithValue(r.Context(), UserContextKey, user)
