@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"net/http"
+	"project-sqlc/internal/constants"
 )
 
 type Response struct {
@@ -57,6 +58,28 @@ func JsonResponseFailed(w http.ResponseWriter, response Response) {
 }
 
 func JsonResponseError(w http.ResponseWriter, err *APIError) {
-	response := BuildResponseFailed(err.Message, err.Error(), err, err.Status, err.Code)
+	message := err.Message
+	if message == "" {
+		message = mapError[err.Code]
+	}
+	if message == "" {
+		message = err.Error()
+	}
+	response := BuildResponseFailed(message, err.Error(), err.Data, err.Status, err.Code)
 	JsonResponseFailed(w, response)
+}
+
+var mapError = map[string]string{
+	constants.UnauthorizedErrorCode:        constants.UnauthorizedErrorMessage,
+	constants.InternalServerErrorCode:      constants.InternalServerErrorMessage,
+	constants.BadRequestErrorCode:          constants.BadRequestErrorMessage,
+	constants.NotFoundErrorCode:            constants.NotFoundErrorMessage,
+	constants.ConflictErrorCode:            constants.ConflictErrorMessage,
+	constants.UnprocessableEntityErrorCode: constants.UnprocessableEntityErrorMessage,
+	constants.UserNotFoundErrorCode:        constants.UserNotFoundErrorMessage,
+	constants.InvalidPasswordErrorCode:     constants.InvalidPasswordErrorMessage,
+	constants.InvalidRefreshTokenErrorCode: constants.InvalidRefreshTokenErrorMessage,
+	constants.InvalidAccessTokenErrorCode:  constants.InvalidAccessTokenErrorMessage,
+	constants.InvalidTokenErrorCode:        constants.InvalidTokenErrorMessage,
+	constants.EmailAlreadyExistsErrorCode:  constants.EmailAlreadyExistsErrorMessage,
 }

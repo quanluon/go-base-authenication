@@ -15,9 +15,14 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)
@@ -46,7 +51,7 @@ func main() {
 	routes.UserRoutes(r, userController, jwtService)
 	routes.AuthRoutes(r, authController)
 
-	addr := ":8888"
+	addr := ":" + os.Getenv("PORT")
 	fmt.Printf("Starting server on %v\n", addr)
 	http.ListenAndServe(addr, r)
 }

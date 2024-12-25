@@ -49,7 +49,7 @@ func (j *jwtService) generateToken(user dto.UserResponse, duration time.Duration
 	diff := exp - time.Now().Unix()
 	tokenString, err := token.SignedString([]byte(secret))
 	if err != nil {
-		return "", 0, utils.InternalServerError(err.Error(), err)
+		return "", 0, utils.InternalServerError(constants.InternalServerErrorCode, err, err.Error())
 	}
 	return tokenString, diff, nil
 }
@@ -67,7 +67,7 @@ func (j *jwtService) verifyToken(tokenString string, secret string) (bool, *util
 		return []byte(secret), nil
 	})
 	if err != nil {
-		return false, utils.InternalServerError(err.Error(), err)
+		return false, utils.InternalServerError(constants.UnauthorizedErrorCode, err, err.Error(), map[string]any{"token": tokenString, "secret": secret})
 	}
 	return token.Valid, nil
 }
@@ -85,7 +85,7 @@ func (j *jwtService) getUserFromToken(tokenString string, secret string) (dto.Us
 		return []byte(secret), nil
 	})
 	if err != nil {
-		return dto.UserResponse{}, utils.InternalServerError(err.Error(), err)
+		return dto.UserResponse{}, utils.InternalServerError(constants.UnauthorizedErrorCode, err, err.Error())
 	}
 	tokenData := token.Claims.(jwt.MapClaims)
 	return dto.UserResponse{
@@ -109,7 +109,7 @@ func (j *jwtService) VerifyUserFromAccessToken(tokenString string) (dto.UserResp
 		return dto.UserResponse{}, err
 	}
 	if !valid {
-		return dto.UserResponse{}, utils.UnauthorizedError(constants.InvalidAccessTokenErrorMessage, errors.New(constants.InvalidTokenErrorCode))
+		return dto.UserResponse{}, utils.UnauthorizedError(constants.InvalidAccessTokenErrorCode, errors.New(constants.InvalidTokenErrorCode), constants.InvalidAccessTokenErrorMessage)
 	}
 	userFromToken, err := j.GetUserFromAccessToken(tokenString)
 	if err != nil {
@@ -124,7 +124,7 @@ func (j *jwtService) VerifyUserFromRefreshToken(tokenString string) (dto.UserRes
 		return dto.UserResponse{}, err
 	}
 	if !valid {
-		return dto.UserResponse{}, utils.UnauthorizedError(constants.InvalidRefreshTokenErrorMessage, errors.New(constants.InvalidTokenErrorCode))
+		return dto.UserResponse{}, utils.UnauthorizedError(constants.InvalidRefreshTokenErrorCode, errors.New(constants.InvalidTokenErrorCode), constants.InvalidRefreshTokenErrorMessage)
 	}
 	userFromToken, err := j.GetUserFromAccessToken(tokenString)
 	if err != nil {
