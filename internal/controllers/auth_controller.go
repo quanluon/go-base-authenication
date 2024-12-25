@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"net/http"
 	"project-sqlc/internal/constants"
 	"project-sqlc/internal/dto"
@@ -19,33 +18,42 @@ func NewAuthController(jwtService services.IJwtService, authService services.IAu
 }
 
 func (c *AuthController) Register(w http.ResponseWriter, r *http.Request) {
-	var request dto.RegisterRequest
-	json.NewDecoder(r.Body).Decode(&request)
-	user, err := c.authService.Register(r.Context(), request)
+	request, err := utils.GetRequestBody[dto.RegisterRequest](r)
 	if err != nil {
-		utils.JsonResponseError(w, err)
+		utils.JsonResponseError(w, utils.BadRequestError(constants.BadRequestErrorCode, err, err.Error()))
+		return
+	}
+	user, registerErr := c.authService.Register(r.Context(), request)
+	if registerErr != nil {
+		utils.JsonResponseError(w, registerErr)
 		return
 	}
 	utils.JsonResponseSuccess(w, utils.BuildResponseSuccess(user, constants.UserCreatedSuccessMessage, http.StatusCreated))
 }
 
 func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
-	var request dto.LoginRequest
-	json.NewDecoder(r.Body).Decode(&request)
-	loginResponse, err := c.authService.Login(r.Context(), request)
+	request, err := utils.GetRequestBody[dto.LoginRequest](r)
 	if err != nil {
-		utils.JsonResponseError(w, err)
+		utils.JsonResponseError(w, utils.BadRequestError(constants.BadRequestErrorCode, err, err.Error()))
+		return
+	}
+	loginResponse, loginErr := c.authService.Login(r.Context(), request)
+	if loginErr != nil {
+		utils.JsonResponseError(w, loginErr)
 		return
 	}
 	utils.JsonResponseSuccess(w, utils.BuildResponseSuccess(loginResponse, constants.UserLoginSuccessMessage, http.StatusOK))
 }
 
 func (c *AuthController) RefreshToken(w http.ResponseWriter, r *http.Request) {
-	var request dto.RefreshTokenRequest
-	json.NewDecoder(r.Body).Decode(&request)
-	loginResponse, err := c.authService.RefreshToken(r.Context(), request)
+	request, err := utils.GetRequestBody[dto.RefreshTokenRequest](r)
 	if err != nil {
-		utils.JsonResponseError(w, err)
+		utils.JsonResponseError(w, utils.BadRequestError(constants.BadRequestErrorCode, err, err.Error()))
+		return
+	}
+	loginResponse, refreshTokenErr := c.authService.RefreshToken(r.Context(), request)
+	if refreshTokenErr != nil {
+		utils.JsonResponseError(w, refreshTokenErr)
 		return
 	}
 	utils.JsonResponseSuccess(w, utils.BuildResponseSuccess(loginResponse, constants.UserRefreshTokenSuccessMessage, http.StatusOK))
