@@ -28,7 +28,7 @@ func (s *AuthService) Register(ctx context.Context, request dto.RegisterRequest)
 	hashedPassword, _ := utils.HashPassword(request.Password)
 	existedUser, _ := s.userService.GetUserByEmail(ctx, request.Email)
 	if existedUser.Id != 0 {
-		return dto.UserResponse{}, utils.BadRequestError(constants.EmailAlreadyExistsErrorMessage, errors.New(constants.EmailAlreadyExistsErrorCode))
+		return dto.UserResponse{}, utils.BadRequestError(constants.EmailAlreadyExistsErrorCode, errors.New(constants.EmailAlreadyExistsErrorMessage), constants.EmailAlreadyExistsErrorMessage)
 	}
 
 	user, err := s.userService.CreateUser(ctx, db.User{
@@ -37,7 +37,7 @@ func (s *AuthService) Register(ctx context.Context, request dto.RegisterRequest)
 		Password: hashedPassword,
 	})
 	if err != nil {
-		return dto.UserResponse{}, utils.InternalServerError(err.Error(), err)
+		return dto.UserResponse{}, err
 	}
 	return dto.UserResponse{
 		Id:    user.Id,
@@ -62,11 +62,11 @@ func (s *AuthService) generateLoginResponse(user dto.UserResponse) dto.LoginResp
 func (s *AuthService) Login(ctx context.Context, request dto.LoginRequest) (dto.LoginResponse, *utils.APIError) {
 	user, _ := s.userService.GetUserByEmail(ctx, request.Email)
 	if user.Id == 0 {
-		return dto.LoginResponse{}, utils.UnauthorizedError(constants.UserNotFoundErrorMessage, errors.New(constants.UserNotFoundErrorCode))
+		return dto.LoginResponse{}, utils.UnauthorizedError(constants.UserNotFoundErrorCode, errors.New(constants.UserNotFoundErrorMessage), constants.UserNotFoundErrorMessage)
 	}
 	isPasswordValid := utils.ComparePassword(request.Password, user.Password)
 	if !isPasswordValid {
-		return dto.LoginResponse{}, utils.UnauthorizedError(constants.InvalidPasswordErrorMessage, errors.New(constants.InvalidPasswordErrorCode))
+		return dto.LoginResponse{}, utils.UnauthorizedError(constants.InvalidPasswordErrorCode, errors.New(constants.InvalidPasswordErrorMessage), constants.InvalidPasswordErrorMessage)
 	}
 	loginResponse := s.generateLoginResponse(user)
 	return loginResponse, nil
@@ -75,7 +75,7 @@ func (s *AuthService) Login(ctx context.Context, request dto.LoginRequest) (dto.
 func (s *AuthService) RefreshToken(ctx context.Context, request dto.RefreshTokenRequest) (dto.LoginResponse, *utils.APIError) {
 	user, err := s.jwtService.VerifyUserFromRefreshToken(request.RefreshToken)
 	if err != nil {
-		return dto.LoginResponse{}, utils.UnauthorizedError(constants.InvalidRefreshTokenErrorMessage, err)
+		return dto.LoginResponse{}, utils.UnauthorizedError(constants.InvalidRefreshTokenErrorCode, err, constants.InvalidRefreshTokenErrorMessage)
 	}
 	loginResponse := s.generateLoginResponse(user)
 	return loginResponse, nil

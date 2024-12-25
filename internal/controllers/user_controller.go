@@ -26,7 +26,7 @@ func (c *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idInt, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		utils.JsonResponseError(w, utils.BadRequestError(err.Error(), err))
+		utils.JsonResponseError(w, utils.BadRequestError(constants.BadRequestErrorCode, err, err.Error()))
 		return
 	}
 	user, getUserErr := c.userService.GetUser(r.Context(), idInt)

@@ -9,6 +9,7 @@ type APIError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
 	Err     error  `json:"err"`
+	Data    any    `json:"data"`
 }
 
 func (r *APIError) Error() string {
@@ -18,34 +19,31 @@ func (r *APIError) Error() string {
 	return r.Message
 }
 
-func NewAPIError(status int, code string, message string, err error) *APIError {
-	return &APIError{
+func NewAPIError(status int, code string, message string, err error, data ...any) *APIError {
+	apiError := &APIError{
 		Status:  status,
 		Code:    code,
 		Message: message,
 		Err:     err,
 	}
-}
-
-func UnauthorizedError(message string, err error, codes ...string) *APIError {
-	return NewAPIError(http.StatusUnauthorized, getCode(err, codes...), message, err)
-}
-
-func InternalServerError(message string, err error, codes ...string) *APIError {
-	return NewAPIError(http.StatusInternalServerError, getCode(err, codes...), message, err)
-}
-
-func BadRequestError(message string, err error, codes ...string) *APIError {
-	return NewAPIError(http.StatusBadRequest, getCode(err, codes...), message, err)
-}
-
-func NotFoundError(message string, err error, codes ...string) *APIError {
-	return NewAPIError(http.StatusNotFound, getCode(err, codes...), message, err)
-}
-
-func getCode(err error, codes ...string) string {
-	if len(codes) > 0 && codes[0] != "" {
-		return codes[0]
+	if len(data) > 0 {
+		apiError.Data = data[0]
 	}
-	return err.Error()
+	return apiError
+}
+
+func UnauthorizedError(code string, err error, message string, data ...any) *APIError {
+	return NewAPIError(http.StatusUnauthorized, code, message, err, data...)
+}
+
+func InternalServerError(code string, err error, message string, data ...any) *APIError {
+	return NewAPIError(http.StatusInternalServerError, code, message, err, data...)
+}
+
+func BadRequestError(code string, err error, message string, data ...any) *APIError {
+	return NewAPIError(http.StatusBadRequest, code, message, err, data...)
+}
+
+func NotFoundError(code string, err error, message string, data ...any) *APIError {
+	return NewAPIError(http.StatusNotFound, code, message, err, data...)
 }
