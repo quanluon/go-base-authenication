@@ -16,6 +16,12 @@ go install github.com/kyleconroy/sqlc@latest
 
 3. Copy .env.example to .env and fill in the values
 
+4. Install `make`
+
+```sh
+brew install make
+```
+
 ### Installation Requirements
 
 - Go version 1.16 or higher
