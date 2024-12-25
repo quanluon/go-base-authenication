@@ -19,7 +19,7 @@ go install github.com/kyleconroy/sqlc@latest
 ### Installation Requirements
 
 - Go version 1.16 or higher
-- Access to a Mysql database
+- Access to a Postgres database
 
 ## DB Setup
 
@@ -31,6 +31,19 @@ go install github.com/kyleconroy/sqlc@latest
 ## Run
 
 1. Run `make run` to start the server
+
+## Features
+
+1. Authentication
+2. Authorization
+3. User Management
+4. Role-Based Access Control (RBAC)
+5. JWT
+6. Refresh Token
+7. Password Hashing
+8. Error Handling
+9. Logging
+10. Middleware
 
 ### Usage Examples
 
@@ -54,6 +67,7 @@ Internal packages are following Clean Architecture
 - models: The database models
 - db: The database migrations
 - routes: The routes for the API
+- middlewares: Middlewares of server
 
 ## API Documentation
 

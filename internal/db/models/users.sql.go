@@ -3,42 +3,46 @@
 //   sqlc v1.27.0
 // source: users.sql
 
-package db
+package database
 
 import (
 	"context"
+	"database/sql"
+	"time"
 )
 
-const createUser = `-- name: CreateUser :exec
-INSERT INTO users (name, email, password) VALUES (?, ?, ?)
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id
 `
 
 type CreateUserParams struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Name     string
+	Email    string
+	Password string
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
-	_, err := q.exec(ctx, q.createUserStmt, createUser, arg.Name, arg.Email, arg.Password)
-	return err
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, createUser, arg.Name, arg.Email, arg.Password)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }
 
 const deleteUser = `-- name: DeleteUser :exec
-DELETE FROM users WHERE id = ?
+DELETE FROM users WHERE id = $1
 `
 
-func (q *Queries) DeleteUser(ctx context.Context, id uint64) error {
-	_, err := q.exec(ctx, q.deleteUserStmt, deleteUser, id)
+func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, deleteUser, id)
 	return err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, name, password, email, created_at, updated_at FROM users WHERE email = ?
+SELECT id, name, password, email, created_at, updated_at FROM users WHERE email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
-	row := q.queryRow(ctx, q.getUserByEmailStmt, getUserByEmail, email)
+	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -52,11 +56,11 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, name, password, email, created_at, updated_at FROM users WHERE id = ?
+SELECT id, name, password, email, created_at, updated_at FROM users WHERE id = $1
 `
 
-func (q *Queries) GetUserById(ctx context.Context, id uint64) (User, error) {
-	row := q.queryRow(ctx, q.getUserByIdStmt, getUserById, id)
+func (q *Queries) GetUserById(ctx context.Context, id int32) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserById, id)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -69,12 +73,51 @@ func (q *Queries) GetUserById(ctx context.Context, id uint64) (User, error) {
 	return i, err
 }
 
-const getUsers = `-- name: GetUsers :many
-SELECT id, name, password, email, created_at, updated_at FROM users
+const getUserWithRoles = `-- name: GetUserWithRoles :one
+SELECT id, name, password, email, created_at, updated_at, user_id, role_id FROM users LEFT JOIN users_roles ON users.id = users_roles.user_id WHERE users.id = $1
 `
 
-func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
-	rows, err := q.query(ctx, q.getUsersStmt, getUsers)
+type GetUserWithRolesRow struct {
+	ID        int32
+	Name      string
+	Password  string
+	Email     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	UserID    sql.NullInt32
+	RoleID    sql.NullInt32
+}
+
+func (q *Queries) GetUserWithRoles(ctx context.Context, id int32) (GetUserWithRolesRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserWithRoles, id)
+	var i GetUserWithRolesRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Password,
+		&i.Email,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UserID,
+		&i.RoleID,
+	)
+	return i, err
+}
+
+const getUsers = `-- name: GetUsers :many
+SELECT id, name, password, email, created_at, updated_at FROM users 
+WHERE name LIKE $1
+LIMIT $2 OFFSET $3
+`
+
+type GetUsersParams struct {
+	Name   string
+	Limit  int32
+	Offset int32
+}
+
+func (q *Queries) GetUsers(ctx context.Context, arg GetUsersParams) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getUsers, arg.Name, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -103,16 +146,63 @@ func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const getUsersWithRoles = `-- name: GetUsersWithRoles :many
+SELECT id, name, password, email, created_at, updated_at, user_id, role_id FROM users LEFT JOIN users_roles ON users.id = users_roles.user_id
+`
+
+type GetUsersWithRolesRow struct {
+	ID        int32
+	Name      string
+	Password  string
+	Email     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	UserID    sql.NullInt32
+	RoleID    sql.NullInt32
+}
+
+func (q *Queries) GetUsersWithRoles(ctx context.Context) ([]GetUsersWithRolesRow, error) {
+	rows, err := q.db.QueryContext(ctx, getUsersWithRoles)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUsersWithRolesRow
+	for rows.Next() {
+		var i GetUsersWithRolesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Password,
+			&i.Email,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.UserID,
+			&i.RoleID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateUser = `-- name: UpdateUser :exec
-UPDATE users SET name = ? WHERE id = ?
+UPDATE users SET name = $1 WHERE id = $2
 `
 
 type UpdateUserParams struct {
-	Name string `json:"name"`
-	ID   uint64 `json:"id"`
+	Name string
+	ID   int32
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
-	_, err := q.exec(ctx, q.updateUserStmt, updateUser, arg.Name, arg.ID)
+	_, err := q.db.ExecContext(ctx, updateUser, arg.Name, arg.ID)
 	return err
 }

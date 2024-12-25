@@ -2,17 +2,37 @@
 // versions:
 //   sqlc v1.27.0
 
-package db
+package database
 
 import (
 	"time"
 )
 
+type Permission struct {
+	ID   int32
+	Name string
+}
+
+type Role struct {
+	ID   int32
+	Name string
+}
+
+type RolesPermission struct {
+	RoleID       int32
+	PermissionID int32
+}
+
 type User struct {
-	ID        uint64    `json:"id"`
-	Name      string    `json:"name"`
-	Password  string    `json:"password"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        int32
+	Name      string
+	Password  string
+	Email     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type UsersRole struct {
+	UserID int32
+	RoleID int32
 }

@@ -10,8 +10,8 @@ import (
 )
 
 type IUserService interface {
-	GetUser(ctx context.Context, id int64) (dto.UserResponse, *utils.APIError)
-	GetUsers(ctx context.Context) ([]dto.UserResponse, *utils.APIError)
+	GetUser(ctx context.Context, id int32) (dto.UserResponse, *utils.APIError)
+	GetUsers(ctx context.Context, baseDto dto.GetUsersDto) ([]dto.UserResponse, *utils.APIError)
 	CreateUser(ctx context.Context, user db.User) (dto.UserResponse, *utils.APIError)
 	GetUserByEmail(ctx context.Context, email string) (dto.UserResponse, *utils.APIError)
 }
@@ -24,7 +24,7 @@ func NewUserService(userRepository repository.IUserRepository) IUserService {
 	return &userService{userRepository: userRepository}
 }
 
-func (s *userService) GetUser(ctx context.Context, id int64) (dto.UserResponse, *utils.APIError) {
+func (s *userService) GetUser(ctx context.Context, id int32) (dto.UserResponse, *utils.APIError) {
 	user, err := s.userRepository.GetUser(ctx, id)
 	if err != nil {
 		return dto.UserResponse{}, utils.InternalServerError(constants.InternalServerErrorCode, err, err.Error())
@@ -32,8 +32,8 @@ func (s *userService) GetUser(ctx context.Context, id int64) (dto.UserResponse, 
 	return dto.UserResponse{}.FromUser(user), nil
 }
 
-func (s *userService) GetUsers(ctx context.Context) ([]dto.UserResponse, *utils.APIError) {
-	users, err := s.userRepository.GetUsers(ctx)
+func (s *userService) GetUsers(ctx context.Context, baseDto dto.GetUsersDto) ([]dto.UserResponse, *utils.APIError) {
+	users, err := s.userRepository.GetUsers(ctx, baseDto)
 	if err != nil {
 		return []dto.UserResponse{}, utils.InternalServerError(constants.InternalServerErrorCode, err, err.Error())
 	}
