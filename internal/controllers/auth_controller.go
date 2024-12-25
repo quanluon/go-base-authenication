@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"net/http"
+	"project-sqlc/internal/constants"
 	"project-sqlc/internal/dto"
 	"project-sqlc/internal/services"
 	"project-sqlc/utils"
@@ -22,10 +23,10 @@ func (c *AuthController) Register(w http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(r.Body).Decode(&request)
 	user, err := c.authService.Register(r.Context(), request)
 	if err != nil {
-		utils.JsonResponseFailed(w, utils.BuildResponseFailed(err.Error(), err.Error(), nil, http.StatusInternalServerError))
+		utils.JsonResponseError(w, err)
 		return
 	}
-	utils.JsonResponseSuccess(w, utils.BuildResponseSuccess(user, "User created successfully", http.StatusCreated))
+	utils.JsonResponseSuccess(w, utils.BuildResponseSuccess(user, constants.UserCreatedSuccessMessage, http.StatusCreated))
 }
 
 func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
@@ -33,10 +34,10 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(r.Body).Decode(&request)
 	loginResponse, err := c.authService.Login(r.Context(), request)
 	if err != nil {
-		utils.JsonResponseFailed(w, utils.BuildResponseFailed(err.Error(), err.Error(), nil, http.StatusInternalServerError))
+		utils.JsonResponseError(w, err)
 		return
 	}
-	utils.JsonResponseSuccess(w, utils.BuildResponseSuccess(loginResponse, "Login successful", http.StatusOK))
+	utils.JsonResponseSuccess(w, utils.BuildResponseSuccess(loginResponse, constants.UserLoginSuccessMessage, http.StatusOK))
 }
 
 func (c *AuthController) RefreshToken(w http.ResponseWriter, r *http.Request) {
@@ -44,8 +45,8 @@ func (c *AuthController) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(r.Body).Decode(&request)
 	loginResponse, err := c.authService.RefreshToken(r.Context(), request)
 	if err != nil {
-		utils.JsonResponseFailed(w, utils.BuildResponseFailed(err.Error(), err.Error(), nil, http.StatusInternalServerError))
+		utils.JsonResponseError(w, err)
 		return
 	}
-	utils.JsonResponseSuccess(w, utils.BuildResponseSuccess(loginResponse, "Refresh token successful", http.StatusOK))
+	utils.JsonResponseSuccess(w, utils.BuildResponseSuccess(loginResponse, constants.UserRefreshTokenSuccessMessage, http.StatusOK))
 }

@@ -17,10 +17,10 @@ type (
 	}
 
 	LoginResponse struct {
-		User         UserResponse
-		AccessToken  string
-		RefreshToken string
-		ExpIn        int64
-		RefreshExpIn int64
+		User         UserResponse `json:"user"`
+		AccessToken  string       `json:"access_token"`
+		RefreshToken string       `json:"refresh_token"`
+		ExpIn        int64        `json:"exp_in"`
+		RefreshExpIn int64        `json:"refresh_exp_in"`
 	}
 )
