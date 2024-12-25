@@ -37,7 +37,7 @@ func NewAuthService(userService IUserService, jwtService IJwtService, roleServic
 		jwtService:           jwtService,
 		secretKey:            os.Getenv("SECRET_KEY"),
 		refreshSecretKey:     os.Getenv("REFRESH_SECRET_KEY"),
-		accessTokenDuration:  time.Hour * 24,
+		accessTokenDuration:  time.Minute * 5,
 		refreshTokenDuration: time.Hour * 24 * 7,
 		roleService:          roleService,
 	}

@@ -7,8 +7,6 @@ import (
 	service "project-sqlc/internal/services"
 	"project-sqlc/utils"
 	"strconv"
-
-	"github.com/go-chi/chi/v5"
 )
 
 type UserController struct {
@@ -20,7 +18,7 @@ func NewUserController(userService service.IUserService) *UserController {
 }
 
 func (c *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := utils.GetRequestParam(r, "id")
 	idInt, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		utils.JsonResponseError(w, utils.BadRequestError(constants.BadRequestErrorCode, err, err.Error()))
@@ -36,12 +34,12 @@ func (c *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *UserController) GetUsers(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	skip, _ := strconv.Atoi(query.Get("skip"))
-	take, _ := strconv.Atoi(query.Get("take"))
+	skip := utils.GetRequestQueryInt(r, "skip")
+	take := utils.GetRequestQueryInt(r, "take")
+	name := utils.GetRequestQueryString(r, "name")
 	baseDto := dto.GetUsersDto{
 		BaseDto: dto.NewBaseDto(int32(skip), int32(take)),
-		Name:    query.Get("name"),
+		Name:    name,
 	}
 	users, err := c.userService.GetUsers(r.Context(), baseDto)
 	if err != nil {
