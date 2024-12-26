@@ -32,7 +32,13 @@ jobs:
         run: go test ./... -v
 
       - name: Add .env file
-        run: cp .env.example .env
+        run: |
+          cp .env.example .env
+          echo "GOOSE_DBSTRING=${{ secrets.GOOSE_DBSTRING }}" >> .env
+          echo "GOOSE_MIGRATIONS_DIR=${{ secrets.GOOSE_MIGRATIONS_DIR }}" >> .env
+
+      - name: Run migrations
+        run: make migrate
 
       - name: Deploy Railway
         uses: bervProject/railway-deploy@main
