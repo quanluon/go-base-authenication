@@ -8,3 +8,11 @@ INNER JOIN roles_permissions ON roles.id = roles_permissions.role_id
 INNER JOIN permissions ON roles_permissions.permission_id = permissions.id
 WHERE users_roles.user_id = $1;
 
+
+-- name: GetRolePermissions :many
+SELECT sqlc.embed(roles), sqlc.embed(permissions) FROM roles
+INNER JOIN roles_permissions ON roles.id = roles_permissions.role_id
+INNER JOIN permissions ON roles_permissions.permission_id = permissions.id;
+
+-- name: GetRoleByConditions :many
+SELECT * FROM roles WHERE @name;

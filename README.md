@@ -51,7 +51,14 @@ brew install make
 9. Logging
 10. Middleware
 
-### Usage Examples
+## Database
+
+- Postgres
+- Sqlc: Generate the database models and queries
+- Goose: Manage the database migrations
+- Pgx: Database client, raw queries
+
+## Usage Examples
 
 - To log in, send a POST request to `/auth/login` with the required body.
 - To register a new user, send a POST request to `/auth/register` with the necessary details.

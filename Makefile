@@ -1,6 +1,10 @@
 include .env
 export
 
+run-server:
+	make sqlc
+	make run
+
 create-migration:
 	goose -dir $(GOOSE_MIGRATIONS_DIR) create $(name) sql
 
