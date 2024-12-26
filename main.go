@@ -56,7 +56,7 @@ func main() {
 		w.Write([]byte(fmt.Sprintf("File uploaded successfully %v", nb_bytes)))
 	})
 
-	database := db.NewDatabase(os.Getenv("GOOSE_DBSTRING"))
+	database := db.NewDatabase(os.Getenv("DB_URL"))
 
 	userRepository := repositories.NewUserRepository(database)
 	userService := services.NewUserService(userRepository)
