@@ -48,7 +48,7 @@ jobs:
           export GOOSE_MIGRATIONS_DIR=${{ secrets.MIGRATIONS_DIR }}
 
       - name: Run migrations
-        run: make migrate
+        run: goose -dir ${{ secrets.MIGRATIONS_DIR }} up
 
       - name: Deploy Railway
         uses: bervProject/railway-deploy@main
