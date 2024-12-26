@@ -1,5 +1,7 @@
 include .env
-export
+export GOOSE_DRIVER=$(GOOSE_DRIVER)
+export GOOSE_DBSTRING=$(GOOSE_DBSTRING)
+export GOOSE_MIGRATIONS_DIR=$(GOOSE_MIGRATIONS_DIR)
 
 run-server:
 	make sqlc
