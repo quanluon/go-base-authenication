@@ -40,6 +40,9 @@ jobs:
           echo "DB_URL=${{ secrets.DB_URL }}" >> .env
           echo "DRIVER=${{ secrets.DRIVER }}" >> .env
           echo "MIGRATIONS_DIR=${{ secrets.MIGRATIONS_DIR }}" >> .env
+
+      - name: Set environment variables
+        run: |
           export GOOSE_DRIVER=${{ secrets.DRIVER }}
           export GOOSE_DBSTRING=${{ secrets.DB_URL }}
           export GOOSE_MIGRATIONS_DIR=${{ secrets.MIGRATIONS_DIR }}
