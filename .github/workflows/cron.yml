@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "*/1 * * * *"
 
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Fill reason here!!!!!!"
+        required: false
+
 jobs:
   cron:
     runs-on: ubuntu-latest
