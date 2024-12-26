@@ -1,0 +1,26 @@
+name: Cron
+
+on:
+  schedule:
+    - cron: "*/1 * * * *"
+
+jobs:
+  cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21.x"
+
+      - name: Install dependencies
+        run: go get ./...
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Run cron
+        run: go run cron/log.go
