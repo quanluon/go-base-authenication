@@ -1,6 +1,11 @@
 name: Deploy to Railway
 
 on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Fill reason here!!!!!!"
+        required: false
   push:
     branches: [main]
 
