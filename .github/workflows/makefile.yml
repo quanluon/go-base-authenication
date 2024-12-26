@@ -17,6 +17,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Setup Goose
+        uses: mscno/setup-goose@v1
+
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
