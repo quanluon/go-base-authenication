@@ -22,8 +22,8 @@ func (u UserResponse) FromUser(user db.User) UserResponse {
 		Id:        int32(user.ID),
 		Name:      user.Name,
 		Email:     user.Email,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
+		CreatedAt: time.Time(user.CreatedAt.Time),
+		UpdatedAt: time.Time(user.UpdatedAt.Time),
 		Password:  user.Password,
 	}
 	// Print userResponse as JSON

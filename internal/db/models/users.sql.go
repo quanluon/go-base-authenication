@@ -7,8 +7,8 @@ package database
 
 import (
 	"context"
-	"database/sql"
-	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -16,13 +16,13 @@ INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id
 `
 
 type CreateUserParams struct {
-	Name     string
-	Email    string
-	Password string
+	Name     string `db:"name" json:"name"`
+	Email    string `db:"email" json:"email"`
+	Password string `db:"password" json:"password"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int32, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.Name, arg.Email, arg.Password)
+	row := q.db.QueryRow(ctx, createUser, arg.Name, arg.Email, arg.Password)
 	var id int32
 	err := row.Scan(&id)
 	return id, err
@@ -33,7 +33,7 @@ DELETE FROM users WHERE id = $1
 `
 
 func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteUser, id)
+	_, err := q.db.Exec(ctx, deleteUser, id)
 	return err
 }
 
@@ -42,7 +42,7 @@ SELECT id, name, password, email, created_at, updated_at FROM users WHERE email 
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -60,7 +60,7 @@ SELECT id, name, password, email, created_at, updated_at FROM users WHERE id = $
 `
 
 func (q *Queries) GetUserById(ctx context.Context, id int32) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserById, id)
+	row := q.db.QueryRow(ctx, getUserById, id)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -78,18 +78,18 @@ SELECT id, name, password, email, created_at, updated_at, user_id, role_id FROM 
 `
 
 type GetUserWithRolesRow struct {
-	ID        int32
-	Name      string
-	Password  string
-	Email     string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	UserID    sql.NullInt32
-	RoleID    sql.NullInt32
+	ID        int32            `db:"id" json:"id"`
+	Name      string           `db:"name" json:"name"`
+	Password  string           `db:"password" json:"password"`
+	Email     string           `db:"email" json:"email"`
+	CreatedAt pgtype.Timestamp `db:"created_at" json:"created_at"`
+	UpdatedAt pgtype.Timestamp `db:"updated_at" json:"updated_at"`
+	UserID    pgtype.Int4      `db:"user_id" json:"user_id"`
+	RoleID    pgtype.Int4      `db:"role_id" json:"role_id"`
 }
 
 func (q *Queries) GetUserWithRoles(ctx context.Context, id int32) (GetUserWithRolesRow, error) {
-	row := q.db.QueryRowContext(ctx, getUserWithRoles, id)
+	row := q.db.QueryRow(ctx, getUserWithRoles, id)
 	var i GetUserWithRolesRow
 	err := row.Scan(
 		&i.ID,
@@ -111,13 +111,13 @@ LIMIT $2 OFFSET $3
 `
 
 type GetUsersParams struct {
-	Name   string
-	Limit  int32
-	Offset int32
+	Name   string `db:"name" json:"name"`
+	Limit  int32  `db:"limit" json:"limit"`
+	Offset int32  `db:"offset" json:"offset"`
 }
 
 func (q *Queries) GetUsers(ctx context.Context, arg GetUsersParams) ([]User, error) {
-	rows, err := q.db.QueryContext(ctx, getUsers, arg.Name, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, getUsers, arg.Name, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -137,9 +137,6 @@ func (q *Queries) GetUsers(ctx context.Context, arg GetUsersParams) ([]User, err
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -151,18 +148,18 @@ SELECT id, name, password, email, created_at, updated_at, user_id, role_id FROM 
 `
 
 type GetUsersWithRolesRow struct {
-	ID        int32
-	Name      string
-	Password  string
-	Email     string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	UserID    sql.NullInt32
-	RoleID    sql.NullInt32
+	ID        int32            `db:"id" json:"id"`
+	Name      string           `db:"name" json:"name"`
+	Password  string           `db:"password" json:"password"`
+	Email     string           `db:"email" json:"email"`
+	CreatedAt pgtype.Timestamp `db:"created_at" json:"created_at"`
+	UpdatedAt pgtype.Timestamp `db:"updated_at" json:"updated_at"`
+	UserID    pgtype.Int4      `db:"user_id" json:"user_id"`
+	RoleID    pgtype.Int4      `db:"role_id" json:"role_id"`
 }
 
 func (q *Queries) GetUsersWithRoles(ctx context.Context) ([]GetUsersWithRolesRow, error) {
-	rows, err := q.db.QueryContext(ctx, getUsersWithRoles)
+	rows, err := q.db.Query(ctx, getUsersWithRoles)
 	if err != nil {
 		return nil, err
 	}
@@ -184,9 +181,6 @@ func (q *Queries) GetUsersWithRoles(ctx context.Context) ([]GetUsersWithRolesRow
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -198,11 +192,11 @@ UPDATE users SET name = $1 WHERE id = $2
 `
 
 type UpdateUserParams struct {
-	Name string
-	ID   int32
+	Name string `db:"name" json:"name"`
+	ID   int32  `db:"id" json:"id"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
-	_, err := q.db.ExecContext(ctx, updateUser, arg.Name, arg.ID)
+	_, err := q.db.Exec(ctx, updateUser, arg.Name, arg.ID)
 	return err
 }

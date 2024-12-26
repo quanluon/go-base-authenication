@@ -1,14 +1,15 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"project-sqlc/internal/constants"
 	"project-sqlc/internal/controllers"
-	db "project-sqlc/internal/db/models"
+	db "project-sqlc/internal/db"
 	"project-sqlc/internal/repositories"
 	"project-sqlc/internal/routes"
 	"project-sqlc/internal/services"
@@ -38,32 +39,42 @@ func main() {
 		w.Write([]byte("hello"))
 	})
 
-	database, err := sql.Open(os.Getenv("GOOSE_DRIVER"), os.Getenv("GOOSE_DBSTRING"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	database.Ping()
+	r.Post("/upload", func(w http.ResponseWriter, r *http.Request) {
+		file, header, _ := r.FormFile("file")
+		defer file.Close()
+		fmt.Println(file)
+		fmt.Println(header)
+		fmt.Println(header.Filename)
+		// create a destination file
+		dst, _ := os.Create(filepath.Join("./", header.Filename))
+		defer dst.Close()
 
-	queries := db.New(database)
+		// upload the file to destination path
+		nb_bytes, _ := io.Copy(dst, file)
 
+		fmt.Println("File uploaded successfully")
+		w.Write([]byte(fmt.Sprintf("File uploaded successfully %v", nb_bytes)))
+	})
+
+	database := db.NewDatabase(os.Getenv("GOOSE_DBSTRING"))
+
+	userRepository := repositories.NewUserRepository(database)
+	userService := services.NewUserService(userRepository)
+	jwtService := services.NewJwtService()
+	roleService := services.NewRoleService(database)
+	authService := services.NewAuthService(userService, jwtService, roleService)
+
+	userController := controllers.NewUserController(userService)
+	authController := controllers.NewAuthController(jwtService, authService)
 	r.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
-		user, err := queries.GetUserWithRoles(r.Context(), 1)
+		email := r.URL.Query().Get("email")
+		user, err := userRepository.GetUserByEmail(r.Context(), email)
 		if err != nil {
 			utils.JsonResponseError(w, utils.BadRequestError(constants.BadRequestErrorCode, err, err.Error()))
 			return
 		}
 		utils.JsonResponseSuccess(w, utils.BuildResponseSuccess(user, constants.Success, http.StatusOK))
 	})
-
-	userRepository := repositories.NewUserRepository(queries)
-	userService := services.NewUserService(userRepository)
-	jwtService := services.NewJwtService()
-	roleService := services.NewRoleService(queries)
-	authService := services.NewAuthService(userService, jwtService, roleService)
-
-	userController := controllers.NewUserController(userService)
-	authController := controllers.NewAuthController(jwtService, authService)
-
 	r.Mount("/api", r)
 
 	routes.UserRoutes(r, userController, authService)

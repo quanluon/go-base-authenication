@@ -14,10 +14,70 @@ SELECT id, name FROM roles WHERE id = $1
 `
 
 func (q *Queries) GetRole(ctx context.Context, id int32) (Role, error) {
-	row := q.db.QueryRowContext(ctx, getRole, id)
+	row := q.db.QueryRow(ctx, getRole, id)
 	var i Role
 	err := row.Scan(&i.ID, &i.Name)
 	return i, err
+}
+
+const getRoleByConditions = `-- name: GetRoleByConditions :many
+SELECT id, name FROM roles WHERE $1
+`
+
+func (q *Queries) GetRoleByConditions(ctx context.Context, name interface{}) ([]Role, error) {
+	rows, err := q.db.Query(ctx, getRoleByConditions, name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Role
+	for rows.Next() {
+		var i Role
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getRolePermissions = `-- name: GetRolePermissions :many
+SELECT roles.id, roles.name, permissions.id, permissions.name FROM roles
+INNER JOIN roles_permissions ON roles.id = roles_permissions.role_id
+INNER JOIN permissions ON roles_permissions.permission_id = permissions.id
+`
+
+type GetRolePermissionsRow struct {
+	Role       Role       `db:"role" json:"role"`
+	Permission Permission `db:"permission" json:"permission"`
+}
+
+func (q *Queries) GetRolePermissions(ctx context.Context) ([]GetRolePermissionsRow, error) {
+	rows, err := q.db.Query(ctx, getRolePermissions)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetRolePermissionsRow
+	for rows.Next() {
+		var i GetRolePermissionsRow
+		if err := rows.Scan(
+			&i.Role.ID,
+			&i.Role.Name,
+			&i.Permission.ID,
+			&i.Permission.Name,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getUserRoles = `-- name: GetUserRoles :many
@@ -29,15 +89,15 @@ WHERE users_roles.user_id = $1
 `
 
 type GetUserRolesRow struct {
-	ID             int32
-	Name           string
-	UserID         int32
-	PermissionID   int32
-	PermissionName string
+	ID             int32  `db:"id" json:"id"`
+	Name           string `db:"name" json:"name"`
+	UserID         int32  `db:"user_id" json:"user_id"`
+	PermissionID   int32  `db:"permission_id" json:"permission_id"`
+	PermissionName string `db:"permission_name" json:"permission_name"`
 }
 
 func (q *Queries) GetUserRoles(ctx context.Context, userID int32) ([]GetUserRolesRow, error) {
-	rows, err := q.db.QueryContext(ctx, getUserRoles, userID)
+	rows, err := q.db.Query(ctx, getUserRoles, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -55,9 +115,6 @@ func (q *Queries) GetUserRoles(ctx context.Context, userID int32) ([]GetUserRole
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

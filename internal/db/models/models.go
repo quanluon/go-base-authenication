@@ -5,34 +5,34 @@
 package database
 
 import (
-	"time"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Permission struct {
-	ID   int32
-	Name string
+	ID   int32  `db:"id" json:"id"`
+	Name string `db:"name" json:"name"`
 }
 
 type Role struct {
-	ID   int32
-	Name string
+	ID   int32  `db:"id" json:"id"`
+	Name string `db:"name" json:"name"`
 }
 
 type RolesPermission struct {
-	RoleID       int32
-	PermissionID int32
+	RoleID       int32 `db:"role_id" json:"role_id"`
+	PermissionID int32 `db:"permission_id" json:"permission_id"`
 }
 
 type User struct {
-	ID        int32
-	Name      string
-	Password  string
-	Email     string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        int32            `db:"id" json:"id"`
+	Name      string           `db:"name" json:"name"`
+	Password  string           `db:"password" json:"password"`
+	Email     string           `db:"email" json:"email"`
+	CreatedAt pgtype.Timestamp `db:"created_at" json:"created_at"`
+	UpdatedAt pgtype.Timestamp `db:"updated_at" json:"updated_at"`
 }
 
 type UsersRole struct {
-	UserID int32
-	RoleID int32
+	UserID int32 `db:"user_id" json:"user_id"`
+	RoleID int32 `db:"role_id" json:"role_id"`
 }
