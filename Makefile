@@ -1,7 +1,7 @@
 include .env
-export GOOSE_DRIVER=$(GOOSE_DRIVER)
-export GOOSE_DBSTRING=$(GOOSE_DBSTRING)
-export GOOSE_MIGRATIONS_DIR=$(GOOSE_MIGRATIONS_DIR)
+export GOOSE_DRIVER=$(DRIVER)
+export GOOSE_DBSTRING=$(DB_URL)
+export GOOSE_MIGRATIONS_DIR=$(MIGRATIONS_DIR)
 
 run-server:
 	make sqlc
@@ -9,6 +9,9 @@ run-server:
 
 create-migration:
 	goose -dir $(GOOSE_MIGRATIONS_DIR) create $(name) sql
+
+migrate-status:
+	goose -dir $(GOOSE_MIGRATIONS_DIR) status
 
 migrate:
 	goose -dir $(GOOSE_MIGRATIONS_DIR) up

@@ -37,8 +37,9 @@ jobs:
       - name: Add .env file
         run: |
           cp .env.example .env
-          echo "GOOSE_DBSTRING=${{ secrets.GOOSE_DBSTRING }}" >> .env
-          echo "GOOSE_MIGRATIONS_DIR=${{ secrets.GOOSE_MIGRATIONS_DIR }}" >> .env
+          echo "DB_URL=${{ secrets.DB_URL }}" >> .env
+          echo "DRIVER=${{ secrets.DRIVER }}" >> .env
+          echo "MIGRATIONS_DIR=${{ secrets.MIGRATIONS_DIR }}" >> .env
 
       - name: Run migrations
         run: make migrate
