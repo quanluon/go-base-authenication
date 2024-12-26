@@ -31,6 +31,9 @@ jobs:
       - name: Test with the Go CLI
         run: go test ./... -v
 
+      - name: Add .env file
+        run: cp .env.example .env
+
       - name: Deploy Railway
         uses: bervProject/railway-deploy@main
         with:
