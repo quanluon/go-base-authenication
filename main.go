@@ -13,6 +13,7 @@ import (
 	"project-sqlc/internal/routes"
 	"project-sqlc/internal/services"
 	"project-sqlc/utils"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -30,6 +31,11 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("welcome"))
+	})
+
+	r.Get("/slow", func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(500 * time.Second)
+		w.Write([]byte("hello"))
 	})
 
 	database, err := sql.Open(os.Getenv("GOOSE_DRIVER"), os.Getenv("GOOSE_DBSTRING"))

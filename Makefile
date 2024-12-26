@@ -14,7 +14,7 @@ sqlc:
 	sqlc generate
 
 run:
-	go run cmd/main.go
+	go run main.go
 
 test:
 	go test -v ./...
